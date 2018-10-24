@@ -1,0 +1,44 @@
+# we use macos for builds to support ios targets
+os: osx
+osx_image: xcode10
+language: rust
+rust:
+  # stable disabled until release of rust 1.31
+  #- stable
+  - beta
+  - nightly
+cache:
+  directories:
+    - $HOME/.rustup
+    - $HOME/.cargo
+    - $TRAVIS_BUILD_DIR/target
+before_script:
+  # update any of the cached toolchain components
+  - rustup update
+  # we have to install nightly on all rust branches for clippy support
+  - rustup toolchain install nightly
+  - rustup component add --toolchain nightly clippy-preview
+  # install the most common windows target if we're on develop branch
+  - if [ "$TRAVIS_BRANCH" = "develop" ]; then rustup target add i686-pc-windows-msvc; fi
+  # install the most common macos target if we're on develop branch
+  - if [ "$TRAVIS_BRANCH" = "develop" ]; then rustup target add x86_64-apple-darwin; fi
+  # install the most common arm 32-bit target (e.g., cortex-m0) if we're on develop branch
+  - if [ "$TRAVIS_BRANCH" = "develop" ]; then rustup target add thumbv6m-none-eabi; fi
+  # install the most common arm 64-bit target (e.g., raspberry pi) if we're on develop branch
+  - if [ "$TRAVIS_BRANCH" = "develop" ]; then rustup target add armv7-unknown-linux-gnueabihf; fi
+  # install all available rust targets (except x32) if we're on mater branch
+  - if [ "$TRAVIS_BRANCH" = "master" ]; then rustup target list | egrep -v "\)$" | egrep -v "\-\w*x32$" | while read i; do rustup target add $i; done; fi
+script:
+  # run tests
+  - cargo +nightly clippy --all-targets -- -D warnings
+  - cargo test
+  # build against all installed rust targets with no optional features enabled
+  - rustup target list | egrep "\)$" | sed -e 's/\s*(.*)$//g' | while read i; do echo Building \"--no-default-features\" for $i; cargo build --target $i --no-default-features; done
+  # build against all installed gnu targets with all features enabled
+  - rustup target list | egrep "\)$" | egrep "\-gnu\w* " | sed -e 's/\s*(.*)$//g' | while read i; do echo Building \"--all-features\" for $i; cargo build --target $i --all-features; done
+  # build against all installed msvc targets with all features enabled
+  - rustup target list | egrep "\)$" | egrep "\-msvc\w* " | sed -e 's/\s*(.*)$//g' | while read i; do echo Building \"--all-features\" for $i; cargo build --target $i --all-features; done
+  # build against all installed ios targets with all features enabled
+  - rustup target list | egrep "\)$" | egrep "\-ios\w* " | sed -e 's/\s*(.*)$//g' | while read i; do echo Building \"--all-features\" for $i; cargo build --target $i --all-features; done
+  # build against all installed android targets with all features enabled
+  - rustup target list | egrep "\)$" | egrep "\-android\w* " | sed -e 's/\s*(.*)$//g' | while read i; do echo Building \"--all-features\" for $i; cargo build --target $i --all-features; done

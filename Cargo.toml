@@ -1,0 +1,14 @@
+[package]
+name = "hvac"
+version = "0.1.0"
+authors = ["Sean Bruton <sean@uberfoo.net>"]
+edition = "2018"
+description = "hvac controller state machine"
+repository = "https://github.com/uber-foo/hvac"
+license = "MIT OR Apache-2.0"
+keywords = ["hvac", "thermostat"]
+exclude = [".travis.yml", ".vscode"]
+categories = ["embedded", "no-std"]
+
+[badges.travis-ci]
+repository = "uber-foo/hvac"
